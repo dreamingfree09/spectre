@@ -8,6 +8,72 @@
 .\.venv\Scripts\Activate.ps1
 # Run the full validation pipeline
 .\run_pipeline.ps1
+Spectre — Deterministic Crypto Trading Planner (Dry-Run)
+======================================================
+
+**What it is:**
+Spectre is a deterministic pipeline that produces a schema-validated, dry-run execution plan for crypto trading using only public Binance endpoints. It is designed for research, planning, and auditability—**not** for live trading.
+
+**What it is NOT:**
+- Not an automated trading bot
+- Does not place orders or require API/auth keys
+- Not financial advice
+
+## Architecture Overview (Pass 1–4.3)
+
+**Pass 1:** Validate schema examples (ensures all input/output formats are correct)
+
+**Pass 2:** Build `facts_pack.json` (fetches public candle data for selected symbols)
+
+**Pass 3:** Build `decision_packet.json` (applies deterministic, non-AI rules to facts)
+
+**Pass 4.3:** Build `execution_plan.json` (produces a dry-run plan using public pricing and Binance exchangeInfo filters—step size, min qty, min notional—with audit fields)
+
+## Produced Artefacts
+
+- **facts_pack.json**: Contains public market data (candles) for selected symbols and lookback period.
+- **decision_packet.json**: Contains deterministic trade decisions based on rules (no AI, no randomness).
+- **execution_plan.json**: Contains a dry-run plan for hypothetical trades, validated against schema, with audit fields and all Binance filters applied.
+
+## Safety Guarantees
+
+- Uses only public endpoints (no keys, no secrets)
+- Dry-run only: does **not** place orders or execute trades
+- All outputs are validated against strict JSON Schemas
+
+## Quickstart
+
+### Windows
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+./run_pipeline.ps1
+```
+
+### Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+./run_pipeline.sh
+```
+> **Note:** `run_pipeline.sh` is provided for Linux/macOS users and runs the same pipeline as the PowerShell script.
+
+## Configuration Notes
+
+- **Symbols** and **lookback-days** are CLI arguments for `build_facts_pack.py`.
+- The **current budget** is fixed at 50 USDT and is split equally across all allowed symbols. This is currently hard-coded in the pipeline logic (see `build_decision_packet.py` and related modules for conceptual location).
+
+## Disclaimer
+
+This project is for research and educational purposes only. It is **not financial advice**. Trading cryptocurrencies is risky. You are solely responsible for any use of this software.
+
+## License
+
+MIT License — see [LICENSE](LICENSE).
 ```
 
 This runs all validation/build steps (Pass 1–4.3) in order, stopping on first error. On success, prints a summary and artifact info.
