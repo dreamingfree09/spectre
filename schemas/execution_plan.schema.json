@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Spectre Execution Plan",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "as_of_utc",
+    "venue",
+    "mode",
+    "inputs",
+    "portfolio",
+    "pricing",
+    "exchange_rules",
+    "plan",
+    "refusals"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.3"
+    },
+    "as_of_utc": { "type": "string", "format": "date-time" },
+    "venue": { "type": "string", "const": "binance" },
+    "mode": { "type": "string", "const": "dry_run" },
+    "inputs": {
+      "type": "object",
+      "required": ["facts_pack_path", "decision_packet_path"],
+      "properties": {
+        "facts_pack_path": { "type": "string" },
+        "decision_packet_path": { "type": "string" }
+      }
+    },
+    "portfolio": {
+      "type": "object",
+      "required": ["quote_currency", "notional_budget_quote"],
+      "properties": {
+        "quote_currency": { "type": "string" },
+        "notional_budget_quote": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "required": ["as_of_utc", "source", "prices"],
+      "properties": {
+        "as_of_utc": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" },
+        "prices": {
+          "type": "object",
+          "additionalProperties": { "type": ["number", "null"] }
+        }
+      }
+    },
+    "exchange_rules": {
+      "type": "object",
+      "required": ["as_of_utc", "source", "symbols"],
+      "properties": {
+        "as_of_utc": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "const": "binance_exchange_info" },
+        "symbols": {
+          "type": "object",
+          "patternProperties": {
+            ".+": {
+              "type": "object",
+              "required": ["step_size", "min_qty", "min_notional", "base_asset", "quote_asset"],
+              "properties": {
+                "step_size": { "type": "number", "exclusiveMinimum": 0 },
+                "min_qty": { "type": "number", "minimum": 0 },
+                "min_notional": { "type": "number", "minimum": 0 },
+                "base_asset": { "type": "string" },
+                "quote_asset": { "type": "string" }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "required": ["action", "orders"],
+      "properties": {
+        "action": { "type": "string" },
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "symbol",
+              "side",
+              "order_type",
+              "notional_quote",
+              "price_used",
+              "quantity_base",
+              "step_size_used",
+              "min_qty_used",
+              "min_notional_used",
+              "rationale"
+            ],
+            "properties": {
+              "symbol": { "type": "string" },
+              "side": { "type": "string", "const": "BUY" },
+              "order_type": { "type": "string", "const": "MARKET" },
+              "notional_quote": { "type": "number", "exclusiveMinimum": 0 },
+              "price_used": { "type": "number", "exclusiveMinimum": 0 },
+              "quantity_base": { "type": "number", "exclusiveMinimum": 0 },
+              "step_size_used": { "type": "number", "exclusiveMinimum": 0 },
+              "min_qty_used": { "type": "number", "minimum": 0 },
+              "min_notional_used": { "type": "number", "minimum": 0 },
+              "rationale": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "refusals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "symbol", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "symbol": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}

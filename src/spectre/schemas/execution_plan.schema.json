@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Execution Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", 
+    "as_of_utc",
+    "venue",
+    "mode",
+    "inputs",
+    "portfolio",
+    "plan",
+    "refusals"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.1"
+    },
+    "as_of_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "venue": {
+      "type": "string",
+      "const": "binance"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["dry_run"]
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["facts_pack_path", "decision_packet_path"],
+      "properties": {
+        "facts_pack_path": {"type": "string"},
+        "decision_packet_path": {"type": "string"}
+      }
+    },
+    "portfolio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quote_currency", "notional_budget_quote"],
+      "properties": {
+        "quote_currency": {"type": "string"},
+        "notional_budget_quote": {"type": "number", "minimum": 0}
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["as_of_utc", "source", "prices"],
+      "properties": {
+        "as_of_utc": {"type": "string", "format": "date-time"},
+        "source": {"type": "string", "const": "binance_public"},
+        "prices": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "orders"],
+      "properties": {
+        "action": {"type": "string", "enum": ["no_action", "rebalance"]},
+        "orders": {
+          "type": "array",
+          "minItems": 0,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["symbol", "side", "order_type", "notional_quote", "rationale"],
+            "properties": {
+              "symbol": {"type": "string"},
+              "side": {"type": "string", "enum": ["BUY", "SELL"]},
+              "order_type": {"type": "string", "enum": ["MARKET"]},
+              "notional_quote": {"type": "number", "exclusiveMinimum": 0},
+              "price_used": {"type": "number", "exclusiveMinimum": 0},
+              "quantity_base": {"type": "number", "exclusiveMinimum": 0},
+              "rationale": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "refusals": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "price_used", "quantity_base"],
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    }
+  }
+}

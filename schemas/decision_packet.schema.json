@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Decision Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "as_of_utc",
+    "global_regime",
+    "risk_score",
+    "vol_target_annualised",
+    "max_gross_exposure",
+    "allowed_symbols",
+    "blocked_symbols",
+    "strategy_mode",
+    "top_risks",
+    "kill_switch"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0"},
+    "as_of_utc": {"type": "string", "format": "date-time"},
+    "global_regime": {"type": "string", "enum": ["risk_on", "risk_off", "neutral"]},
+    "risk_score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "vol_target_annualised": {"type": "number", "minimum": 0, "maximum": 1},
+    "max_gross_exposure": {"type": "number", "minimum": 0, "maximum": 2},
+    "allowed_symbols": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "blocked_symbols": {
+      "type": "array",
+      "items": {"type": "string"},
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "strategy_mode": {"type": "string", "enum": ["do_nothing", "reduce_risk", "trend", "mean_revert"]},
+    "top_risks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["risk", "rationale"],
+        "additionalProperties": false,
+        "properties": {
+          "risk": {"type": "string"},
+          "rationale": {"type": "string"}
+        }
+      }
+    },
+    "kill_switch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_daily_drawdown", "conditions"],
+      "properties": {
+        "max_daily_drawdown": {"type": "number", "minimum": 0, "maximum": 0.2},
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "not": {
+        "properties": {
+          "allowed_symbols": {
+            "type": "array",
+            "contains": {"const": {"$data": "1/blocked_symbols"}}
+          }
+        }
+      }
+    }
+  ]
+}

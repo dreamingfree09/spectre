@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "as_of_utc": "2026-01-24T12:00:00Z",
+  "global_regime": "bullish",
+  "risk_score": 110,
+  "vol_target_annualised": 1.2,
+  "max_gross_exposure": 2.5,
+  "allowed_symbols": ["BTC-USD", "ETH-USD", "DOGE-USD"],
+  "blocked_symbols": ["ETH-USD"],
+  "strategy_mode": "moonshot",
+  "top_risks": [
+    {"risk": "regulatory"}
+  ],
+  "kill_switch": {
+    "max_daily_drawdown": 0.3,
+    "conditions": []
+  },
+  "extra_field": "should not be here"
+}

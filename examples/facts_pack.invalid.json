@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "as_of_utc": "2026-01-24T12:00:00Z",
+  "universe": {
+    "venue": "coinbase",
+    "symbols": ["BTC-USD", "ETH-USD"]
+  },
+  "timeframe": {
+    "candle": "1d",
+    "lookback_days": 30
+  },
+  "market_data": {
+    "candles": {
+      "BTC-USD": [
+        {"t": "2026-01-23T00:00:00Z", "o": 40000, "h": 41000, "l": 39500, "c": 40500, "v": 100.5}
+      ],
+      "ETH-USD": [
+        {"t": "2026-01-23T00:00:00Z", "o": 2500, "h": 2550, "l": 2450, "c": 2520, "v": 200.0}
+      ]
+    }
+  },
+  "computed": {
+    "realised_vol_annualised": {
+      "BTC-USD": 0.5,
+      "ETH-USD": 0.7
+    },
+    "correlation": {
+      "symbols": ["BTC-USD", "ETH-USD"],
+      "matrix": [
+        [1, 0.5],
+        [0.8, 0.9]
+      ]
+    }
+  },
+  "provenance": {
+    "sources": [
+      {"name": "Coinbase API", "type": "exchange", "retrieved_at_utc": "2026-01-24T12:00:00Z"}
+    ]
+  },
+  "extra_field": 123
+}

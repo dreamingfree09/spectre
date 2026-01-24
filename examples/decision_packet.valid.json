@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "as_of_utc": "2026-01-24T12:00:00Z",
+  "global_regime": "risk_on",
+  "risk_score": 75,
+  "vol_target_annualised": 0.5,
+  "max_gross_exposure": 1.5,
+  "allowed_symbols": ["BTC-USD", "ETH-USD"],
+  "blocked_symbols": ["DOGE-USD"],
+  "strategy_mode": "trend",
+  "top_risks": [
+    {"risk": "regulatory", "rationale": "SEC action on stablecoins"}
+  ],
+  "kill_switch": {
+    "max_daily_drawdown": 0.1,
+    "conditions": ["BTC-USD drops >10%", "ETH-USD drops >15%"]
+  }
+}
