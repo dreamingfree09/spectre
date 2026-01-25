@@ -7,16 +7,33 @@ from datetime import datetime, timezone
 from decimal import Decimal, ROUND_DOWN, InvalidOperation
 from spectre.binance_public import fetch_exchange_info
 
+
 SCHEMA_VERSION = "1.3"
 VENUE = "binance"
 MODE = "dry_run"
 QUOTE_CURRENCY = "USDT"
-NOTIONAL_BUDGET_QUOTE = 50.0
+NOTIONAL_BUDGET_QUOTE = 50.0  # Default value, can be overridden by env var
 MIN_ORDER_NOTIONAL = 5.0
 
 
-def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, Any],
-                        facts_pack_path: str, decision_packet_path: str) -> Dict[str, Any]:
+def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, Any], facts_pack_path: str, decision_packet_path: str) -> Dict[str, Any]:
+    import os
+    # Allow override of NOTIONAL_BUDGET_QUOTE via env var
+    env_budget = os.environ.get("SPECTRE_BUDGET_QUOTE", "")
+    budget_quote = NOTIONAL_BUDGET_QUOTE
+    budget_override_invalid = False
+    budget_override_value = None
+    if env_budget:
+        try:
+            budget_override_value = float(env_budget)
+            if budget_override_value > 0:
+                budget_quote = budget_override_value
+            else:
+                budget_override_invalid = True
+        except Exception:
+            budget_override_invalid = True
+
+    # Fetch public prices from Binance
     # Fetch public prices from Binance
     allowed_symbols = decision_packet.get("allowed_symbols", [])
     pricing = {
@@ -52,6 +69,12 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
     risk_score = decision_packet.get("risk_score", None)
 
     refusals: List[Dict[str, Any]] = []
+    if budget_override_invalid:
+        refusals.append({
+            "code": "BAD_BUDGET_OVERRIDE",
+            "symbol": "*",
+            "message": f"Invalid SPECTRE_BUDGET_QUOTE={env_budget}; using default 50.0"
+        })
     plan_action = None
     orders: List[Dict[str, Any]] = []
 
@@ -77,7 +100,7 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
             "message": "No allowed symbols. No action taken."
         })
     elif strategy_mode in ("trend", "mean_revert", "reduce_risk"):
-        per_order_notional = round(NOTIONAL_BUDGET_QUOTE / len(allowed_symbols), 2) if allowed_symbols else 0
+        per_order_notional = round(budget_quote / len(allowed_symbols), 2) if allowed_symbols else 0
         if per_order_notional < MIN_ORDER_NOTIONAL:
             plan_action = "rebalance"
             for symbol in allowed_symbols:
@@ -169,8 +192,8 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                     "min_notional_used": float(min_notional),
                     "rationale": f"{strategy_mode} strategy, risk_score={risk_score}"
                 })
-        # If after filtering there are zero orders, plan.action should become "no_action"
-        if not orders:
+        # If after processing there are zero orders AND no refusals, treat as no_action
+        if not orders and not refusals:
             plan_action = "no_action"
     else:
         plan_action = "no_action"
@@ -197,7 +220,7 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
         },
         "portfolio": {
             "quote_currency": QUOTE_CURRENCY,
-            "notional_budget_quote": NOTIONAL_BUDGET_QUOTE
+            "notional_budget_quote": budget_quote
         },
         "pricing": pricing,
         "exchange_rules": exchange_rules,

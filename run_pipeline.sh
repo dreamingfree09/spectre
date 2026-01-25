@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -8,6 +9,8 @@ source .venv/bin/activate
 
 # Ensure src/ layout imports work
 export PYTHONPATH="src"
+
+# Optionally set SPECTRE_BUDGET_QUOTE to override the default budget (e.g., SPECTRE_BUDGET_QUOTE=8 ./run_pipeline.sh)
 
 echo "[1/4] Validating examples..."
 python scripts/validate_examples.py

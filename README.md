@@ -62,10 +62,30 @@ pip install -r requirements.txt
 ```
 > **Note:** `run_pipeline.sh` is provided for Linux/macOS users and runs the same pipeline as the PowerShell script.
 
+
 ## Configuration Notes
 
 - **Symbols** and **lookback-days** are CLI arguments for `build_facts_pack.py`.
-- The **current budget** is fixed at 50 USDT and is split equally across all allowed symbols. This is currently hard-coded in the pipeline logic (see `build_decision_packet.py` and related modules for conceptual location).
+- **Budget**: By default, the notional budget is 50 USDT, split equally across all allowed symbols. You can override this by setting the `SPECTRE_BUDGET_QUOTE` environment variable before running the pipeline. The value must be a positive number. If the value is invalid (non-numeric or ≤ 0), the pipeline will fall back to the default (50.0) and record a refusal in the output.
+
+### Running the pipeline with a custom budget
+
+#### Example 1: Use default budget (50 USDT)
+```bash
+./run_pipeline.sh
+```
+
+#### Example 2: Override budget to 8 USDT
+```bash
+SPECTRE_BUDGET_QUOTE=8 ./run_pipeline.sh
+```
+
+#### Example 3: Invalid override (falls back to default, logs refusal)
+```bash
+SPECTRE_BUDGET_QUOTE=abc ./run_pipeline.sh
+```
+
+The effective budget used is reflected in `portfolio.notional_budget_quote` in the output `execution_plan.json`.
 
 ## Disclaimer
 
