@@ -200,6 +200,15 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
     if not orders:
         plan_action = "no_action"
 
+    # Final else for unrecognized strategy_mode
+    if plan_action is None:
+        plan_action = "no_action"
+        refusals.append({
+            "code": "UNRECOGNIZED_STRATEGY_MODE",
+            "symbol": "*",
+            "message": f"Unrecognized strategy_mode: {strategy_mode}. No action taken."
+        })
+
     plan = {
         "action": plan_action,
         "orders": orders
