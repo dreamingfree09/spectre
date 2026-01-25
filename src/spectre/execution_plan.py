@@ -195,6 +195,11 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
         # If after processing there are zero orders AND no refusals, treat as no_action
         if not orders and not refusals:
             plan_action = "no_action"
+
+    # Post-condition: if we created zero orders, this must be no_action
+    if not orders:
+        plan_action = "no_action"
+
     else:
         plan_action = "no_action"
         refusals.append({
