@@ -199,8 +199,11 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                     "rationale": f"{strategy_mode} strategy, risk_score={risk_score}"
                 })
                 orderable_symbols.append(symbol)
-        # After all processing, set plan_action strictly from orders and refusals
-        if len(orderable_symbols) == len(allowed_symbols) and len(orderable_symbols) > 0:
+        # After all processing, enforce all-or-nothing: any refusal means no orders/action
+        if refusals:
+            orders.clear()
+            plan_action = "no_action"
+        elif len(orderable_symbols) == len(allowed_symbols) and len(orderable_symbols) > 0:
             plan_action = "rebalance"
         else:
             plan_action = "no_action"
