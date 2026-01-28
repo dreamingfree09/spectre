@@ -1,0 +1,55 @@
+{
+  "exchange_rules": {
+    "source": "binance_exchange_info",
+    "symbols": {
+      "BTCUSDT": {
+        "base_asset": "BTC",
+        "min_notional": 5.0,
+        "min_qty": 1e-05,
+        "quote_asset": "USDT",
+        "step_size": 1e-05
+      },
+      "ETHUSDT": {
+        "base_asset": "ETH",
+        "min_notional": 5.0,
+        "min_qty": 0.0001,
+        "quote_asset": "USDT",
+        "step_size": 0.0001
+      }
+    }
+  },
+  "inputs": {
+    "decision_packet_path": "decision.json",
+    "facts_pack_path": "facts.json"
+  },
+  "mode": "dry_run",
+  "plan": {
+    "action": "no_action",
+    "orders": []
+  },
+  "portfolio": {
+    "notional_budget_quote": 50.0,
+    "quote_currency": "USDT"
+  },
+  "pricing": {
+    "prices": {
+      "BTCUSDT": null,
+      "ETHUSDT": null
+    },
+    "source": "binance_public"
+  },
+  "refusals": [
+    {
+      "code": "NO_PRICE",
+      "message": "No valid price for BTCUSDT. Order not created.",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "code": "NO_PRICE",
+      "message": "No valid price for ETHUSDT. Order not created.",
+      "symbol": "ETHUSDT"
+    }
+  ],
+  "schema_version": "1.3",
+  "venue": "binance"
+}
