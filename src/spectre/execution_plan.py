@@ -75,59 +75,60 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
             "symbol": "*",
             "message": f"Invalid SPECTRE_BUDGET_QUOTE={env_budget}; using default 50.0"
         })
-    plan_action = None
+
     orders: List[Dict[str, Any]] = []
+    plan_action = None
 
     if strategy_mode == "do_nothing":
-        plan_action = "no_action"
         refusals.append({
             "code": "STRATEGY_DO_NOTHING",
             "symbol": "*",
             "message": "Strategy mode is do_nothing. No action taken."
         })
-    elif max_gross_exposure == 0:
         plan_action = "no_action"
+    elif max_gross_exposure == 0:
         refusals.append({
             "code": "ZERO_GROSS_EXPOSURE",
             "symbol": "*",
             "message": "Max gross exposure is zero. No action taken."
         })
-    elif not allowed_symbols:
         plan_action = "no_action"
+    elif not allowed_symbols:
         refusals.append({
             "code": "NO_ALLOWED_SYMBOLS",
             "symbol": "*",
             "message": "No allowed symbols. No action taken."
         })
+        plan_action = "no_action"
     elif strategy_mode in ("trend", "mean_revert", "reduce_risk"):
         per_order_notional = round(budget_quote / len(allowed_symbols), 2) if allowed_symbols else 0
-        if per_order_notional < MIN_ORDER_NOTIONAL:
-            plan_action = "rebalance"
-            for symbol in allowed_symbols:
+        orderable_symbols = []
+        for symbol in allowed_symbols:
+            refused = False
+            if per_order_notional < MIN_ORDER_NOTIONAL:
                 refusals.append({
                     "code": "BELOW_MIN_NOTIONAL",
                     "symbol": symbol,
                     "message": f"Per-order notional ({per_order_notional}) below minimum ({MIN_ORDER_NOTIONAL}). No orders created."
                 })
-        else:
-            plan_action = "rebalance"
-            for symbol in allowed_symbols:
-                price_used = pricing["prices"].get(symbol)
-                if not price_used or price_used <= 0:
-                    refusals.append({
-                        "code": "NO_PRICE",
-                        "symbol": symbol,
-                        "message": f"No valid price for {symbol}. Order not created."
-                    })
-                    continue
-                rule = rules.get(symbol)
-                if not rule:
-                    refusals.append({
-                        "code": "NO_EXCHANGE_RULES",
-                        "symbol": symbol,
-                        "message": f"No exchange rules for {symbol}. Order not created."
-                    })
-                    continue
+                refused = True
+            price_used = pricing["prices"].get(symbol)
+            if not refused and (not price_used or price_used <= 0):
+                refusals.append({
+                    "code": "NO_PRICE",
+                    "symbol": symbol,
+                    "message": f"No valid price for {symbol}. Order not created."
+                })
+                refused = True
+            rule = rules.get(symbol)
+            if not refused and not rule:
+                refusals.append({
+                    "code": "NO_EXCHANGE_RULES",
+                    "symbol": symbol,
+                    "message": f"No exchange rules for {symbol}. Order not created."
+                })
+                refused = True
+            if not refused:
                 try:
                     step_size = Decimal(str(rule["step_size"]))
                     min_qty = Decimal(str(rule["min_qty"]))
@@ -138,7 +139,8 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                         "symbol": symbol,
                         "message": f"Invalid exchange rules for {symbol}. Order not created."
                     })
-                    continue
+                    refused = True
+            if not refused:
                 try:
                     raw_qty = Decimal(str(per_order_notional)) / Decimal(str(price_used))
                 except (InvalidOperation, ZeroDivisionError):
@@ -147,7 +149,8 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                         "symbol": symbol,
                         "message": f"Invalid price for {symbol}. Order not created."
                     })
-                    continue
+                    refused = True
+            if not refused:
                 # Round DOWN to step size
                 if step_size > 0:
                     qty = (raw_qty // step_size) * step_size
@@ -162,7 +165,8 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                         "symbol": symbol,
                         "message": f"{symbol}: raw_qty={raw_qty}, qty={qty}, step_size={step_size} rounded to zero."
                     })
-                    continue
+                    refused = True
+            if not refused:
                 # Enforce min_qty
                 if qty < min_qty:
                     refusals.append({
@@ -170,7 +174,8 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                         "symbol": symbol,
                         "message": f"{symbol}: qty={qty} < min_qty={min_qty}. raw_qty={raw_qty}, step_size={step_size}"
                     })
-                    continue
+                    refused = True
+            if not refused:
                 # Enforce min_notional (only if min_notional > 0)
                 notional = qty * Decimal(str(price_used))
                 if min_notional > 0 and notional < min_notional:
@@ -179,7 +184,8 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                         "symbol": symbol,
                         "message": f"{symbol}: qty={qty}, notional={notional} < min_notional={min_notional}. raw_qty={raw_qty}, step_size={step_size}, price_used={price_used}, effective_notional={notional}"
                     })
-                    continue
+                    refused = True
+            if not refused:
                 orders.append({
                     "symbol": symbol,
                     "side": "BUY",
@@ -192,22 +198,20 @@ def build_execution_plan(facts_pack: Dict[str, Any], decision_packet: Dict[str, 
                     "min_notional_used": float(min_notional),
                     "rationale": f"{strategy_mode} strategy, risk_score={risk_score}"
                 })
-        # If after processing there are zero orders AND no refusals, treat as no_action
-        if not orders and not refusals:
+                orderable_symbols.append(symbol)
+        # After all processing, set plan_action strictly from orders and refusals
+        if len(orderable_symbols) == len(allowed_symbols) and len(orderable_symbols) > 0:
+            plan_action = "rebalance"
+        else:
             plan_action = "no_action"
-
-    # Post-condition: if we created zero orders, this must be no_action
-    if not orders:
-        plan_action = "no_action"
-
-    # Final else for unrecognized strategy_mode
-    if plan_action is None:
-        plan_action = "no_action"
+    else:
+        # Unknown strategy_mode: always refuse
         refusals.append({
             "code": "UNRECOGNIZED_STRATEGY_MODE",
             "symbol": "*",
             "message": f"Unrecognized strategy_mode: {strategy_mode}. No action taken."
         })
+        plan_action = "no_action"
 
     plan = {
         "action": plan_action,

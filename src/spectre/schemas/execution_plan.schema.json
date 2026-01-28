@@ -4,19 +4,21 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", 
+    "schema_version",
     "as_of_utc",
     "venue",
     "mode",
     "inputs",
     "portfolio",
+    "pricing",
+    "exchange_rules",
     "plan",
     "refusals"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "1.1"
+      "const": "1.3"
     },
     "as_of_utc": {
       "type": "string",
@@ -28,61 +30,175 @@
     },
     "mode": {
       "type": "string",
-      "enum": ["dry_run"]
+      "enum": [
+        "dry_run"
+      ]
     },
     "inputs": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["facts_pack_path", "decision_packet_path"],
+      "required": [
+        "facts_pack_path",
+        "decision_packet_path"
+      ],
       "properties": {
-        "facts_pack_path": {"type": "string"},
-        "decision_packet_path": {"type": "string"}
+        "facts_pack_path": {
+          "type": "string"
+        },
+        "decision_packet_path": {
+          "type": "string"
+        }
       }
     },
     "portfolio": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["quote_currency", "notional_budget_quote"],
+      "required": [
+        "quote_currency",
+        "notional_budget_quote"
+      ],
       "properties": {
-        "quote_currency": {"type": "string"},
-        "notional_budget_quote": {"type": "number", "minimum": 0}
+        "quote_currency": {
+          "type": "string"
+        },
+        "notional_budget_quote": {
+          "type": "number",
+          "minimum": 0
+        }
       }
     },
     "pricing": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["as_of_utc", "source", "prices"],
+      "required": [
+        "as_of_utc",
+        "source",
+        "prices"
+      ],
       "properties": {
-        "as_of_utc": {"type": "string", "format": "date-time"},
-        "source": {"type": "string", "const": "binance_public"},
+        "as_of_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "const": "binance_public"
+        },
         "prices": {
           "type": "object",
           "minProperties": 1,
-          "additionalProperties": {"type": "number", "exclusiveMinimum": 0}
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "exchange_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "as_of_utc",
+        "source",
+        "symbols"
+      ],
+      "properties": {
+        "as_of_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "const": "binance_exchange_info"
+        },
+        "symbols": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
         }
       }
     },
     "plan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["action", "orders"],
+      "required": [
+        "action",
+        "orders"
+      ],
       "properties": {
-        "action": {"type": "string", "enum": ["no_action", "rebalance"]},
+        "action": {
+          "type": "string",
+          "enum": [
+            "no_action",
+            "rebalance"
+          ]
+        },
         "orders": {
           "type": "array",
           "minItems": 0,
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["symbol", "side", "order_type", "notional_quote", "rationale"],
+            "required": [
+              "symbol",
+              "side",
+              "order_type",
+              "notional_quote",
+              "rationale"
+            ],
             "properties": {
-              "symbol": {"type": "string"},
-              "side": {"type": "string", "enum": ["BUY", "SELL"]},
-              "order_type": {"type": "string", "enum": ["MARKET"]},
-              "notional_quote": {"type": "number", "exclusiveMinimum": 0},
-              "price_used": {"type": "number", "exclusiveMinimum": 0},
-              "quantity_base": {"type": "number", "exclusiveMinimum": 0},
-              "rationale": {"type": "string"}
+              "symbol": {
+                "type": "string"
+              },
+              "side": {
+                "type": "string",
+                "enum": [
+                  "BUY",
+                  "SELL"
+                ]
+              },
+              "order_type": {
+                "type": "string",
+                "enum": [
+                  "MARKET"
+                ]
+              },
+              "notional_quote": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "price_used": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "quantity_base": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "step_size_used": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "min_qty_used": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "min_notional_used": {
+                "type": "number",
+                "minimum": 0
+              },
+              "rationale": {
+                "type": "string"
+              }
             }
           }
         }
@@ -94,10 +210,21 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["code", "message", "price_used", "quantity_base"],
+        "required": [
+          "code",
+          "symbol",
+          "message"
+        ],
         "properties": {
-          "code": {"type": "string"},
-          "message": {"type": "string"}
+          "code": {
+            "type": "string"
+          },
+          "symbol": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
         }
       }
     }
